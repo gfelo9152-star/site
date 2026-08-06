@@ -565,5 +565,30 @@ footer b{color:#fff}
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
 </script>
+<!-- Telegram activity tracking -->
+<script>
+(function(){
+  try {
+    const emit = function(type, label){
+      const body = new URLSearchParams({
+        type: type,
+        path: window.location.pathname + window.location.search,
+        title: document.title,
+        label: label || ''
+      });
+      navigator.sendBeacon('/api/activity', new Blob([body.toString()], {type:'application/x-www-form-urlencoded;charset=UTF-8'}));
+    };
+    setTimeout(function(){ emit('view'); }, 1500);
+    document.addEventListener('click', function(e){
+      var t = e.target.closest ? e.target.closest('a,button') : null;
+      if(!t) return;
+      var href = t.getAttribute('href') || '';
+      var label = t.getAttribute('aria-label') || t.textContent.trim().slice(0,60) || 'cta';
+      if(href.indexOf('tel:') === 0) emit('call', label);
+      else if(/wa\.me|api\.whatsapp\.com/i.test(href)) emit('whatsapp', label);
+    }, true);
+  } catch(e){}
+})();
+</script>
 </body>
 </html>
