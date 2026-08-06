@@ -1,1 +1,545 @@
-test
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avavine Technical Services | خدمات التنظيف في جميع أنحاء الإمارات 0525952971</title>
+<meta name="description" content="Avavine Technical Services متخصصون في تنظيف وتعقيم المباني والفلل والشقق والمفروشات بالبخار في جميع أنحاء الإمارات. خدمة 24 ساعة — اتصل 0525952971">
+<meta name="format-detection" content="telephone=no">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="icon" type="image/png" href="images/logo.png">
+<style>
+:root{
+  --blue:#018edd;
+  --blue-dark:#016bb0;
+  --blue-soft:#e6f4fd;
+  --navy:#0e2a47;
+  --ink:#1b2b3a;
+  --muted:#5b6b7a;
+  --line:#e3edf5;
+  --bg:#ffffff;
+  --bg-soft:#f5fafd;
+  --gold:#f0a500;
+  --green:#25d366;
+  --radius:18px;
+  --shadow:0 10px 30px rgba(1,142,221,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+  color:var(--ink);
+  background:var(--bg);
+  line-height:1.8;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+a{text-decoration:none;color:inherit}
+.container{max-width:1120px;margin:0 auto;padding:0 20px}
+section{padding:72px 0}
+h2.section-title{
+  font-size:clamp(24px,3.5vw,34px);
+  font-weight:700;
+  text-align:center;
+  color:var(--navy);
+  margin-bottom:12px;
+}
+.section-sub{
+  text-align:center;
+  color:var(--muted);
+  max-width:640px;
+  margin:0 auto 44px;
+  font-size:17px;
+}
+.blue{color:var(--blue)}
+
+/* ===== Header ===== */
+header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.header-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;padding:10px 0;
+}
+.logo{display:flex;align-items:center;gap:12px}
+.logo img{width:52px;height:52px;object-fit:contain}
+.logo-text b{font-size:17px;color:var(--navy);display:block;line-height:1.3;font-weight:700}
+.logo-text span{font-size:12.5px;color:var(--muted);display:block}
+.header-phone{
+  display:flex;align-items:center;gap:10px;
+  background:var(--blue);color:#fff;
+  padding:10px 20px;border-radius:50px;
+  font-weight:700;font-size:16px;
+  box-shadow:0 6px 18px rgba(1,142,221,.35);
+  transition:.25s;
+}
+.header-phone:hover{background:var(--blue-dark);transform:translateY(-2px)}
+.header-phone i{font-size:18px}
+.header-phone .num{direction:ltr;unicode-bidi:isolate}
+
+/* ===== Hero ===== */
+.hero{
+  background:
+    radial-gradient(ellipse 70% 60% at 85% 10%, rgba(1,142,221,.14), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 10% 90%, rgba(1,142,221,.10), transparent 60%),
+    linear-gradient(180deg,#f2f9fe,#ffffff);
+  padding:64px 0 56px;
+  position:relative;overflow:hidden;
+}
+.hero-grid{
+  display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#fff;border:1px solid var(--line);
+  color:var(--blue);font-size:13.5px;font-weight:600;
+  padding:7px 16px;border-radius:50px;margin-bottom:18px;
+  box-shadow:var(--shadow);
+}
+.hero h1{
+  font-size:clamp(26px,4.5vw,42px);
+  font-weight:700;line-height:1.45;
+  color:var(--navy);margin-bottom:16px;
+}
+.hero h1 span{color:var(--blue)}
+.hero p.lead{
+  font-size:clamp(15px,2vw,17.5px);
+  color:var(--muted);margin-bottom:24px;max-width:560px;
+}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:26px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  padding:14px 28px;border-radius:50px;font-weight:700;font-size:16px;
+  transition:.25s;
+}
+.btn-call{background:var(--blue);color:#fff;box-shadow:0 8px 22px rgba(1,142,221,.35)}
+.btn-call:hover{background:var(--blue-dark);transform:translateY(-2px)}
+.btn-wa{background:var(--green);color:#fff;box-shadow:0 8px 22px rgba(37,211,102,.30)}
+.btn-wa:hover{filter:brightness(.95);transform:translateY(-2px)}
+.hero-trust{
+  display:flex;flex-wrap:wrap;gap:22px;
+  color:var(--muted);font-size:14px;font-weight:600;
+}
+.hero-trust span{display:inline-flex;align-items:center;gap:7px}
+.hero-trust i{color:var(--blue)}
+.hero-img-wrap{
+  background:#fff;border-radius:24px;overflow:hidden;
+  box-shadow:0 24px 60px rgba(1,142,221,.16);
+  border:1px solid var(--line);
+}
+.hero-img-wrap img{width:100%;height:340px;object-fit:cover}
+.hero-img-caption{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 18px;background:var(--blue-soft);
+  color:var(--blue-dark);font-weight:600;font-size:14px;
+}
+.hero-img-caption i{font-size:18px}
+
+/* ===== Stats bar ===== */
+.stats-bar{
+  background:var(--navy);color:#fff;
+  padding:26px 0;
+}
+.stats-inner{display:flex;flex-wrap:wrap;justify-content:space-around;gap:20px;text-align:center}
+.stat b{font-size:clamp(20px,3vw,28px);display:block;color:#7cc7f5;font-weight:700}
+.stat span{font-size:14px;color:#cfe4f5}
+
+/* ===== Services ===== */
+.services{background:var(--bg)}
+.services-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+}
+.service-card{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:28px 24px;transition:.3s;
+  display:flex;flex-direction:column;gap:10px;
+}
+.service-card:hover{
+  transform:translateY(-6px);
+  box-shadow:var(--shadow);
+  border-color:var(--blue);
+}
+.service-icon{
+  width:58px;height:58px;border-radius:16px;
+  background:var(--blue-soft);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;margin-bottom:4px;
+}
+.service-card h3{font-size:18px;color:var(--navy);font-weight:700}
+.service-card p{font-size:14.5px;color:var(--muted)}
+.service-card .srv-cta{
+  margin-top:auto;color:var(--blue);font-weight:700;font-size:14px;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.service-card .srv-cta i{transition:.2s}
+.service-card:hover .srv-cta i{transform:translateX(-4px)}
+
+/* ===== SEO keywords ===== */
+.keywords{background:var(--bg-soft);padding:56px 0}
+.kw-wrap{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.kw{
+  background:#fff;border:1px solid var(--line);
+  color:var(--muted);font-size:13.5px;
+  padding:8px 16px;border-radius:50px;
+  transition:.2s;cursor:default;
+}
+.kw:hover{color:var(--blue);border-color:var(--blue);background:var(--blue-soft)}
+
+/* ===== Why us ===== */
+.why{background:#fff}
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.why-item{text-align:center;padding:26px 14px;border-radius:var(--radius);background:var(--bg-soft)}
+.why-item i{font-size:30px;color:var(--blue);margin-bottom:12px;display:block}
+.why-item b{font-size:16px;color:var(--navy);display:block;margin-bottom:6px}
+.why-item span{font-size:13.5px;color:var(--muted)}
+
+/* ===== Contact ===== */
+.contact{
+  background:linear-gradient(135deg,var(--navy),#123a63);
+  color:#fff;text-align:center;padding:72px 0;
+}
+.contact h2{color:#fff}
+.contact .section-sub{color:#bcd6ec}
+.contact-big{
+  font-size:clamp(30px,6vw,52px);
+  font-weight:700;letter-spacing:1px;
+  direction:ltr;unicode-bidi:isolate;
+  display:inline-block;margin:10px 0 24px;
+  color:#fff;
+}
+.contact-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-bottom:30px}
+.contact-actions .btn{font-size:17px;padding:16px 34px}
+.contact .btn-wa{border:2px solid rgba(255,255,255,.2)}
+.contact-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:28px;color:#cfe4f5;font-size:14.5px}
+.contact-meta span{display:inline-flex;align-items:center;gap:8px}
+.contact-meta i{color:#7cc7f5}
+
+/* ===== Footer ===== */
+footer{background:#0a1c30;color:#9db8d0;padding:30px 0;text-align:center;font-size:13.5px}
+footer b{color:#fff}
+
+/* ===== Floating buttons ===== */
+.float-wa{
+  position:fixed;bottom:96px;left:20px;z-index:200;
+  width:58px;height:58px;border-radius:50%;
+  background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;box-shadow:0 8px 24px rgba(37,211,102,.4);
+  animation:waPulse 2.2s infinite;
+}
+@keyframes waPulse{
+  0%,100%{box-shadow:0 8px 24px rgba(37,211,102,.4)}
+  50%{box-shadow:0 8px 32px rgba(37,211,102,.75)}
+}
+.sticky-call-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:199;
+  background:rgba(255,255,255,.98);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  display:flex;gap:10px;
+}
+.sticky-call-bar a{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px;border-radius:14px;font-weight:700;font-size:15px;color:#fff;
+}
+.scb-call{background:var(--blue)}
+.scb-wa{background:var(--green)}
+.sticky-call-bar .num{direction:ltr;unicode-bidi:isolate}
+
+@media(min-width:700px){
+  .sticky-call-bar{display:none}
+  .float-wa{bottom:24px}
+}
+@media(max-width:960px){
+  .hero-grid{grid-template-columns:1fr}
+  .hero-img-wrap{order:-1}
+  .hero-img-wrap img{height:230px}
+  .services-grid{grid-template-columns:repeat(2,1fr)}
+  .why-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  section{padding:52px 0}
+  .logo-text span{display:none}
+  .header-phone{padding:10px 14px;font-size:14px}
+  .services-grid{grid-template-columns:1fr}
+  .why-grid{grid-template-columns:1fr}
+  body{padding-bottom:74px}
+  .contact-meta{gap:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <div class="container header-inner">
+    <a class="logo" href="#">
+      <img src="images/logo.png" alt="Avavine Technical Services">
+      <span class="logo-text">
+        <b>Avavine Technical Services</b>
+        <span>خدمات التنظيف في جميع أنحاء الإمارات</span>
+      </span>
+    </a>
+    <a class="header-phone" href="tel:+971525952971">
+      <i class="fa-solid fa-phone"></i>
+      <span class="num">052 595 2971</span>
+    </a>
+  </div>
+</header>
+
+<!-- ===== Hero ===== -->
+<section class="hero" style="padding-top:56px">
+  <div class="container hero-grid">
+    <div>
+      <div class="hero-badge"><i class="fa-solid fa-bolt"></i> خدمة 24 ساعة — 7 أيام في الأسبوع</div>
+      <h1>شركة تنظيف <span>Avavine Technical Services</span><br>تنظيف وتعقيم المباني والمفروشات في جميع أنحاء الإمارات</h1>
+      <p class="lead">
+        متخصصون في تنظيف وتعقيم جميع أنواع المباني السكنية (قصور – فلل – بيوت عربية – شقق وغيرها)
+        وتنظيف وتعقيم جميع أنواع المفروشات (أطقم الكنب والسجاد والمجالس العربية والستائر وغيرها) بالبخار
+        بأحدث تقنيات وأجهزة التنظيف الحديثة ومواد آمنة وصديقة للبيئة.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-call" href="tel:+971525952971"><i class="fa-solid fa-phone"></i> اتصل الآن</a>
+        <a class="btn btn-wa" href="https://wa.me/971525952971" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+      </div>
+      <div class="hero-trust">
+        <span><i class="fa-solid fa-circle-check"></i> فروعنا في جميع أنحاء الإمارات</span>
+        <span><i class="fa-solid fa-circle-check"></i> أسعار مخفضة في متناول الجميع</span>
+        <span><i class="fa-solid fa-circle-check"></i> عمالة مدربة ومعدات حديثة</span>
+      </div>
+    </div>
+    <div class="hero-img-wrap">
+      <img src="images/hero.jpg" alt="Avavine Technical Services تنظيف وتعقيم">
+      <div class="hero-img-caption">
+        <i class="fa-solid fa-soap"></i>
+        تنظيف عميق وتعقيم كامل بمعايير عالية الجودة
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Stats ===== -->
+<div class="stats-bar">
+  <div class="container stats-inner">
+    <div class="stat"><b>24/7</b><span>خدمة متواصلة</span></div>
+    <div class="stat"><b>100%</b><span>ضمان النظافة والتعقيم</span></div>
+    <div class="stat"><b>7</b><span>إمارات نخدمها</span></div>
+    <div class="stat"><b>مواد آمنة</b><span>صديقة للبيئة</span></div>
+  </div>
+</div>
+
+<!-- ===== Services ===== -->
+<section class="services" id="services">
+  <div class="container">
+    <h2 class="section-title">خدمات <span class="blue">Avavine Technical Services</span></h2>
+    <p class="section-sub">نقدم لكم خدمات تنظيف بأسعار مخفضة في متناول الجميع، بأحدث تقنيات وأجهزة التنظيف الحديثة داخل المنزل.</p>
+    <div class="services-grid">
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-building"></i></div>
+        <h3>تنظيف المباني السكنية</h3>
+        <p>متخصصون في تنظيف وتعقيم جميع أنواع المباني السكنية: قصور، فلل، بيوت عربية، شقق وغيرها.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-couch"></i></div>
+        <h3>تنظيف وغسيل وتعقيم الكنب</h3>
+        <p>خدمة تنظيف الكنب بالبخار بأسعار مخفضة، بأحدث تقنيات وأجهزة التنظيف الحديثة مع التعقيم الكامل.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-window-restore"></i></div>
+        <h3>تنظيف وتعقيم الستائر بالبخار</h3>
+        <p>تنظيف الستائر بأسعار مخفضة مع إزالة الغبار والبقع وتعقيم عميق بالبخار لجميع أنواع الستائر.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <h3>غسيل وتعقيم السجاد والموكيت</h3>
+        <p>تنظيف عميق على مرحلتين: ماكينة الغسيل ذات الأقراص المتغيرة ثم ماكينة السحب ذات القوة العالية.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-house-circle-check"></i></div>
+        <h3>تنظيف وتعقيم الفلل</h3>
+        <p>خدمة تنظيف وتعقيم كاملة للفلل بجميع مساحاتها، بأحدث تقنيات وأجهزة التنظيف الحديثة ومواد آمنة.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-gem"></i></div>
+        <h3>جلي وتلميع الرخام والسيراميك</h3>
+        <p>جلي وتلميع الرخام والسراميك والباركيه بمواد وماكينات مختلفة حسب النوع، مع الملمعات والمطهرات.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-building-circle-check"></i></div>
+        <h3>تنظيف وتعقيم الشقق</h3>
+        <p>خدمة متميزة لتنظيف جميع الشقق بأحجامها المختلفة، وتخلصون من عبء التنظيف في أسرع وقت.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-kitchen-set"></i></div>
+        <h3>إزالة الدهون من المطابخ</h3>
+        <p>غسيل وتعقيم كامل للخزائن والحوائط والأرضيات وإزالة الدهون والشحوم من جميع الأماكن.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-broom"></i></div>
+        <h3>تنظيف وتلميع الزجاج</h3>
+        <p>تنظيف الزجاج بجميع أشكاله: شبابيك منزلقة أو وجهات زجاجية مرتفعة، بتلميع بدون آثار.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
+        <h3>غسيل وتنظيف الأحواش</h3>
+        <p>خدمة تنظيف الأحواش والساحات الخارجية بأسعار مخفضة، بأساليب تنظيف سريعة وفعالة.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-people-roof"></i></div>
+        <h3>تنظيف المجالس العربية</h3>
+        <p>غسيل وتعقيم المجالس العربية وأطقم الجلسات بالبخار، مع إزالة البقع والتعطير الكامل.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"><i class="fa-solid fa-water-ladder"></i></div>
+        <h3>تنظيف حمامات السباحة</h3>
+        <p>تنظيف وتعقيم حمامات السباحة بكفاءة عالية، مع ضمان صحة ونقاء المياه بشكل دائم.</p>
+        <a class="srv-cta" href="tel:+971525952971">احجز الخدمة <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Why us ===== -->
+<section class="why" id="why">
+  <div class="container">
+    <h2 class="section-title">لماذا <span class="blue">Avavine Technical Services</span>؟</h2>
+    <p class="section-sub">نحرص على تقديم أعلى مستويات النظافة والتعقيم مع أسعار تنافسية تناسب الجميع.</p>
+    <div class="why-grid">
+      <div class="why-item">
+        <i class="fa-solid fa-headset"></i>
+        <b>خدمة 24 ساعة</b>
+        <span>متاحون للتواصل في أي وقت، 7 أيام في الأسبوع</span>
+      </div>
+      <div class="why-item">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <b>جميع الإمارات</b>
+        <span>فروعنا في جميع أنحاء الإمارات العربية المتحدة</span>
+      </div>
+      <div class="why-item">
+        <i class="fa-solid fa-user-check"></i>
+        <b>عمالة مدربة</b>
+        <span>فريق محترف مدرب على أحدث تقنيات التنظيف</span>
+      </div>
+      <div class="why-item">
+        <i class="fa-solid fa-tags"></i>
+        <b>أسعار مخفضة</b>
+        <span>أسعار في متناول الجميع دون المساس بالجودة</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Keywords ===== -->
+<div class="keywords">
+  <div class="container">
+    <div class="kw-wrap">
+      <span class="kw">شركة تنظيف</span>
+      <span class="kw">تنظيف فلل</span>
+      <span class="kw">تعقيم فلل</span>
+      <span class="kw">غسيل فلل</span>
+      <span class="kw">غسيل مفروشات</span>
+      <span class="kw">تنظيف مفروشات</span>
+      <span class="kw">تعقيم مفروشات</span>
+      <span class="kw">غسيل كنب</span>
+      <span class="kw">تعقيم الكنب</span>
+      <span class="kw">تنظيف الكنب</span>
+      <span class="kw">تنظيف بيوت عربية</span>
+      <span class="kw">غسيل بيوت عربية</span>
+      <span class="kw">تعقيم بيوت عربية</span>
+      <span class="kw">غسيل منازل</span>
+      <span class="kw">شركة تنظيف منازل</span>
+      <span class="kw">شركة تعقيم منازل</span>
+      <span class="kw">شركة تنظيف سجاد</span>
+      <span class="kw">تعقيم السجاد</span>
+      <span class="kw">غسيل السجاد</span>
+      <span class="kw">غسيل المطابخ</span>
+      <span class="kw">تعقيم المطابخ</span>
+      <span class="kw">تنظيف المطابخ</span>
+      <span class="kw">جلي وتلميع الرخام</span>
+      <span class="kw">جلي وتلميع السيراميك</span>
+      <span class="kw">تنظيف أحواش</span>
+      <span class="kw">غسيل أحواش</span>
+      <span class="kw">تنظيف مجالس</span>
+      <span class="kw">غسيل مجالس</span>
+      <span class="kw">تعقيم مجالس</span>
+      <span class="kw">إزالة الدهون من المطابخ</span>
+      <span class="kw">تنظيف الزجاج</span>
+      <span class="kw">تنظيف حمامات السباحة</span>
+      <span class="kw">تعقيم حمامات السباحة</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Contact ===== -->
+<section class="contact" id="contact">
+  <div class="container">
+    <h2 class="section-title">للتواصل معنا في أي وقت</h2>
+    <p class="section-sub">خدمة 24 ساعة — اتصل بنا الآن واحصل على عرض سعر مجاني</p>
+    <div class="contact-big" dir="ltr">052 595 2971</div>
+    <div class="contact-actions">
+      <a class="btn btn-call" href="tel:+971525952971"><i class="fa-solid fa-phone"></i> اتصل الآن</a>
+      <a class="btn btn-wa" href="https://wa.me/971525952971" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+    </div>
+    <div class="contact-meta">
+      <span><i class="fa-solid fa-clock"></i> متاحون 24 ساعة — 7 أيام</span>
+      <span><i class="fa-solid fa-location-dot"></i> جميع أنحاء الإمارات</span>
+      <span><i class="fa-solid fa-phone-volume"></i> <span dir="ltr">052 595 2971</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer>
+  <div class="container">
+    <p><b>Avavine Technical Services</b> — جميع الحقوق محفوظة © <span id="year"></span></p>
+    <p style="margin-top:4px;opacity:.7">خدمات التنظيف والتعقيم في جميع أنحاء الإمارات العربية المتحدة</p>
+  </div>
+</footer>
+
+<!-- Floating WhatsApp -->
+<a class="float-wa" href="https://wa.me/971525952971" target="_blank" rel="noopener" aria-label="واتساب">
+  <i class="fa-brands fa-whatsapp"></i>
+</a>
+
+<!-- Sticky call bar (mobile) -->
+<div class="sticky-call-bar">
+  <a class="scb-call" href="tel:+971525952971"><i class="fa-solid fa-phone"></i> <span class="num">052 595 2971</span></a>
+  <a class="scb-wa" href="https://wa.me/971525952971" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+</div>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
