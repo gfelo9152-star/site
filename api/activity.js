@@ -40,6 +40,20 @@ export default async function handler(req, res) {
   const region = req.headers['x-vercel-ip-country-region'] || '';
   const ref = req.headers.referer || '';
 
+  // استخراج الكلمة المفتاحية ومعاملات ValueTrack من الـ URL
+  let keyword = '', gclid = '', matchType = '', campaignId = '', adGroupId = '';
+  try {
+    const qs = new URLSearchParams(path.split('?')[1] || '');
+    keyword = qs.get('keyword') || '';
+    gclid = qs.get('gclid') || '';
+    matchType = qs.get('match_type') || '';
+    campaignId = qs.get('campaign_id') || '';
+    adGroupId = qs.get('ad_group_id') || '';
+    if (keyword) keyword = decodeURIComponent(keyword);
+  } catch (e) {}
+
+  const mtName = matchType === 'e' ? 'مطابقة تامة' : matchType === 'p' ? 'مطابقة عبارة' : matchType === 'b' ? 'مطابقة واسعة' : (matchType || '?');
+
   const emoji = type === 'call' ? '📞' : type === 'whatsapp' ? '💬' : '👀';
   const typeName = type === 'call' ? 'نقرة اتصال' : type === 'whatsapp' ? 'نقرة واتساب' : 'زيارة صفحة';
 
@@ -48,7 +62,10 @@ export default async function handler(req, res) {
     `🕐 ${new Date().toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })} +04`,
     `🌐 ${ip || '?'}`,
     `📍 ${country || '?'}${city ? ' - ' + city : ''}`,
-    `📄 ${escapeHtml(path)}`,
+    keyword ? `🔑 الكلمة: ${escapeHtml(keyword)}` : null,
+    keyword ? `🎯 المطابقة: ${mtName}` : null,
+    gclid ? `🆔 GCLID: ${gclid.slice(0, 30)}` : null,
+    `📄 ${escapeHtml(path.slice(0, 150))}`,
     label ? `🎯 ${escapeHtml(label)}` : null,
     `🔗 ${escapeHtml(ref || 'direct')}`,
     ua ? `📱 ${escapeHtml(ua.slice(0, 120))}` : null,
