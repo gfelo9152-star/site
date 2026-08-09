@@ -54,6 +54,19 @@ export default async function handler(req, res) {
 
   const mtName = matchType === 'e' ? 'مطابقة تامة' : matchType === 'p' ? 'مطابقة عبارة' : matchType === 'b' ? 'مطابقة واسعة' : (matchType || '?');
 
+  // نوع الجهاز من User-Agent
+  let device = '?';
+  try {
+    if (/android/i.test(ua) || /iphone|ipod|mobile/i.test(ua)) device = '📱 موبايل';
+    else if (/ipad|tablet/i.test(ua)) device = '💻 تابلت';
+    else if (/windows|macintosh|linux|ubuntu|chrome\/\d+\.\d+\s*safari/i.test(ua) && !/mobile/i.test(ua)) device = '🖥️ كمبيوتر';
+    else device = '❓ غير معروف';
+    if (/ios|iphone|ipad|ipod/i.test(ua)) device += ' (iOS)';
+    else if (/android/i.test(ua)) device += ' (Android)';
+    else if (/windows/i.test(ua)) device += ' (Windows)';
+    else if (/macintosh|mac os/i.test(ua)) device += ' (macOS)';
+  } catch (e) {}
+
   const emoji = type === 'call' ? '📞' : type === 'whatsapp' ? '💬' : '👀';
   const typeName = type === 'call' ? 'نقرة اتصال' : type === 'whatsapp' ? 'نقرة واتساب' : 'زيارة صفحة';
 
@@ -62,13 +75,13 @@ export default async function handler(req, res) {
     `🕐 ${new Date().toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })} +04`,
     `🌐 ${ip || '?'}`,
     `📍 ${country || '?'}${city ? ' - ' + city : ''}`,
+    `📱 الجهاز: ${device}`,
     keyword ? `🔑 الكلمة: ${escapeHtml(keyword)}` : null,
     keyword ? `🎯 المطابقة: ${mtName}` : null,
     gclid ? `🆔 GCLID: ${gclid.slice(0, 30)}` : null,
     `📄 ${escapeHtml(path.slice(0, 150))}`,
     label ? `🎯 ${escapeHtml(label)}` : null,
     `🔗 ${escapeHtml(ref || 'direct')}`,
-    ua ? `📱 ${escapeHtml(ua.slice(0, 120))}` : null,
   ].filter(Boolean).join('\n');
 
   try {
