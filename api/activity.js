@@ -1,6 +1,7 @@
 // Vercel serverless function — إشعارات تلغرام لنشاط الموقع
 // يُستدعى من المتصفح عبر sendBeacon — التوكن يبقى بالسيرفر فقط
-const TELEGRAM_BOT_TOKEN = '8814260556:AAGxQ9_tdJaewYAJYbfA2PBp7a_UXQ9oNcA';
+// التوكن يُقرأ من متغير البيئة (Vercel env) — لا يُكتب في الكود
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = '7304090625'; // Bilal home channel
 const ALLOWED_ORIGIN = 'https://site-iota-five-75.vercel.app';
 

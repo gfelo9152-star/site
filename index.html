@@ -38,14 +38,10 @@ function gtag_report_conversion_call() {
   return false;
 }
 function gtag_report_conversion_wa(url) {
-  var callback = function () {
-    if (typeof(url) != 'undefined') { window.location = url; }
-  };
   gtag('event', 'conversion', {
       'send_to': 'AW-18336821398/25_3CND3r90cEJbh1qdE',
       'value': 5.0,
-      'currency': 'AED',
-      'event_callback': callback
+      'currency': 'AED'
   });
   return false;
 }
@@ -610,11 +606,10 @@ document.getElementById('year').textContent = new Date().getFullYear();
       if(href.indexOf('tel:') === 0) { emit('call', label); try{ gtag_report_conversion_call(); }catch(err){} }
       else if(/wa\.me|api\.whatsapp\.com/i.test(href)) { emit('whatsapp', label); }
     }, true);
-    // ربط تحويل الواتساب: intercept clicks على wa.me قبل فتح الرابط
+    // ربط تحويل الواتساب: نسجّل التحويل بدون منع فتح الرابط
     document.addEventListener('click', function(e){
       var t = e.target.closest ? e.target.closest('a[href*="wa.me"],a[href*="api.whatsapp.com"]') : null;
       if(!t) return;
-      e.preventDefault();
       gtag_report_conversion_wa(t.href);
     }, false);
   } catch(e){}
