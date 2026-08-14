@@ -1,5 +1,6 @@
 // Vercel serverless — Webhook زر «حظر/فك حظر/قائمة IP» (Cleaning/Avavine)
 // يستقبل ضغطة زر التلغرام ويحظر/يفك/يعرض على حساب 9743497891 (Avavine)
+const { bumpStat, getTodayStats } = require('./stats');
 const TARGET_CIDS = ['9743497891'];
 const MCC_ID = '5565578031';
 const IPV4 = /^(\d{1,3}\.){3}\d{1,3}$/;
@@ -214,6 +215,24 @@ export default async function handler(req, res) {
   const chatId = msg?.chat?.id;
   const messageId = msg?.message_id;
 
+  // ─── Today's stats ─────────────────────────────
+  if (data === 'stats') {
+    await answerCallback(tokenT, cq.id, '⏳ جارٍ جلب الإحصائيات...');
+    const s = await getTodayStats();
+    const total = s.views + s.calls + s.whatsapp + s.blocked;
+    const todayAr = new Date().toLocaleDateString('ar-EG', { timeZone: 'Asia/Dubai', weekday: 'long', day: 'numeric', month: 'long' });
+    const text =
+      `📊 <b>إحصائيات اليوم — تنظيف</b>\n` +
+      `🗓 ${todayAr}\n\n` +
+      `👀 الزيارات: <b>${s.views}</b>\n` +
+      `📞 الاتصالات: <b>${s.calls}</b>\n` +
+      `💬 واتساب: <b>${s.whatsapp}</b>\n` +
+      `🚫 IPs محظورة: <b>${s.blocked}</b>\n` +
+      `\nالمجموع: ${total}`;
+    await editMessage(tokenT, chatId, messageId, text);
+    return res.status(200).json({ ok: true, stats: s });
+  }
+
   // ─── List ───────────────────────────────────────
   if (data === 'list') {
     await answerCallback(tokenT, cq.id, '⏳ جارٍ جلب القائمة...');
@@ -356,8 +375,10 @@ export default async function handler(req, res) {
   const replyMarkup = {
     inline_keyboard: [
       [{ text: '↩️ فك الحظر', callback_data: `unblock:${ip}` }, { text: '📋 المحظورات', callback_data: 'list' }],
+      [{ text: '📊 إحصائيات اليوم', callback_data: 'stats' }],
     ],
   };
   await editMessage(tokenT, chatId, messageId, summary, replyMarkup);
+  if (okCount > 0) bumpStat('blocked').catch(() => {});
   return res.status(200).json({ ok: true, blocked: ip, okCount, failCount, details });
 }
