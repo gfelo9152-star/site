@@ -71,11 +71,18 @@ export default async function handler(req, res) {
   const emoji = type === 'call' ? '📞' : type === 'whatsapp' ? '💬' : '👀';
   const typeName = type === 'call' ? 'نقرة اتصال' : type === 'whatsapp' ? 'نقرة واتساب' : 'زيارة صفحة';
 
+  // علم الدولة من رمز ISO
+  const FLAG_OFFSET = 127397;
+  const countryCode = req.headers['x-vercel-ip-country'] || '';
+  const flag = /^[A-Za-z]{2}$/.test(countryCode)
+    ? String.fromCodePoint(...countryCode.toUpperCase().split('').map((c) => c.charCodeAt(0) + FLAG_OFFSET))
+    : '';
+
   const msg = [
     `${emoji} ${typeName} جديدة`,
     `🕐 ${new Date().toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })} +04`,
     `🌐 ${ip || '?'}`,
-    `📍 ${country || '?'}${city ? ' - ' + city : ''}`,
+    `📍 ${flag ? flag + ' ' : ''}${country || '?'}${city ? ' - ' + city : ''}`,
     `📱 الجهاز: ${device}`,
     keyword ? `🔑 الكلمة: ${escapeHtml(keyword)}` : null,
     keyword ? `🎯 المطابقة: ${mtName}` : null,
@@ -85,6 +92,16 @@ export default async function handler(req, res) {
     `🔗 ${escapeHtml(ref || 'direct')}`,
   ].filter(Boolean).join('\n');
 
+  // زر حظر الـ IP + زر المحظورات
+  const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip || '');
+  const buttons = [];
+  if (ipv4) buttons.push([
+    { text: '🚫 حظر الـ IP', callback_data: `block:${ip}` },
+    { text: '🌐 حظر الشبكة', callback_data: `blocknet:${ip}` },
+  ]);
+  buttons.push([{ text: '📋 المحظورات', callback_data: 'list' }]);
+  const replyMarkup = { inline_keyboard: buttons };
+
   try {
     const t = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -93,6 +110,7 @@ export default async function handler(req, res) {
         chat_id: TELEGRAM_CHAT_ID,
         text: msg,
         disable_web_page_preview: true,
+        ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
       }),
       signal: AbortSignal.timeout(8000),
     });
