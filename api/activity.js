@@ -2,6 +2,7 @@
 // يُستدعى من المتصفح عبر sendBeacon — التوكن يبقى بالسيرفر فقط
 // التوكن يُقرأ من متغير البيئة (Vercel env) — لا يُكتب في الكود
 const { bumpStat, bumpIpVisit, AUTO_BLOCK_THRESHOLD } = require('./stats');
+const { isBot } = require('./botDetect');
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = '7304090625'; // Bilal home channel
 const ALLOWED_ORIGIN = 'https://site-iota-five-75.vercel.app';
@@ -41,6 +42,11 @@ export default async function handler(req, res) {
   const city = req.headers['x-vercel-ip-city'] || '';
   const region = req.headers['x-vercel-ip-country-region'] || '';
   const ref = req.headers.referer || '';
+
+  // 🚫 استبعاد الروبوتات (Googlebot، العناكب، السكريبتات...) — لا إشعار ولا عدّاد
+  if (isBot(ua)) {
+    return res.status(200).json({ ok: true, bot: true });
+  }
 
   // استخراج الكلمة المفتاحية ومعاملات ValueTrack من الـ URL
   let keyword = '', gclid = '', matchType = '', campaignId = '', adGroupId = '';
