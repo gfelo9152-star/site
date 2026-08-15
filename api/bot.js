@@ -124,7 +124,7 @@ async function listBlockedIps(token) {
   const map = new Map();
   for (const cid of TARGET_CIDS) {
     const res = await gadsRaw(token, cid, `customers/${cid}/googleAds:searchStream`, {
-      query: "SELECT campaign_criterion.ip_block.ip_address FROM campaign_criterion WHERE campaign_criterion.type = 'IP_BLOCK' AND campaign_criterion.status = 'ENABLED'",
+      query: "SELECT campaign_criterion.ip_block.ip_address FROM campaign_criterion WHERE campaign_criterion.type = 'IP_BLOCK' AND campaign_criterion.status = 'ENABLED' AND campaign.status != 'REMOVED'",
     });
     if (!res.ok) continue;
     const batches = Array.isArray(res.data) ? res.data : [];
@@ -149,9 +149,10 @@ async function unblockIp(token, ip) {
   const details = [];
   const parts = ip.split('.');
   const network = `${parts[0]}.${parts[1]}.${parts[2]}.0/24`;
+  // نستبعد الحملات المحذوفة: Google يرفض mutate على موارد حملة REMOVED (OPERATION_NOT_PERMITTED_FOR_REMOVED_RESOURCE)
   const queries = [
-    `SELECT campaign_criterion.resource_name FROM campaign_criterion WHERE campaign_criterion.type = 'IP_BLOCK' AND campaign_criterion.ip_block.ip_address = '${ip}/32'`,
-    `SELECT campaign_criterion.resource_name FROM campaign_criterion WHERE campaign_criterion.type = 'IP_BLOCK' AND campaign_criterion.ip_block.ip_address = '${network}'`,
+    `SELECT campaign_criterion.resource_name FROM campaign_criterion WHERE campaign_criterion.type = 'IP_BLOCK' AND campaign.status != 'REMOVED' AND campaign_criterion.ip_block.ip_address = '${ip}/32'`,
+    `SELECT campaign_criterion.resource_name FROM campaign_criterion WHERE campaign_criterion.type = 'IP_BLOCK' AND campaign.status != 'REMOVED' AND campaign_criterion.ip_block.ip_address = '${network}'`,
   ];
   for (const cid of TARGET_CIDS) {
     const resources = [];

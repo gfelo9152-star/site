@@ -7,7 +7,25 @@ function todayKey() {
 }
 
 function storeId() {
-  return (process.env.BLOB_READ_WRITE_TOKEN || '').split('_')[2] || '';
+  // token format: vercel_blob_rw_<storeId>_<secret> — sid is parts[3] after the 'rw' marker
+  const parts = (process.env.BLOB_READ_WRITE_TOKEN || '').split('_');
+  return parts[3] || parts[2] || '';
+}
+
+function blobPutHeaders(token, sid) {
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'x-vercel-blob-store-id': sid,
+    'x-api-version': '12',
+    'x-allow-overwrite': '1',
+    'x-vercel-blob-access': 'public',
+  };
+}
+
+function blobPutUrl(pathname) {
+  // نفس endpoint اللي يستخدمه @vercel/blob SDK — مع pathname في query
+  return `https://vercel.com/api/blob/?pathname=${encodeURIComponent(pathname)}`;
 }
 
 async function readStats() {
@@ -28,9 +46,9 @@ async function writeStats(stats) {
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
     if (!token) return;
-    const r = await fetch(`https://api.vercel.com/v1/blob?path=stats/${todayKey()}.json`, {
+    const r = await fetch(blobPutUrl(`stats/${todayKey()}.json`), {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: blobPutHeaders(token, storeId()),
       body: JSON.stringify(stats),
       signal: AbortSignal.timeout(6000),
     });
@@ -69,9 +87,9 @@ async function writeIpVisits(map) {
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
     if (!token) return;
-    await fetch(`https://api.vercel.com/v1/blob?path=stats/ipvisits-${todayKey()}.json`, {
+    await fetch(blobPutUrl(`stats/ipvisits-${todayKey()}.json`), {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: blobPutHeaders(token, storeId()),
       body: JSON.stringify(map),
       signal: AbortSignal.timeout(6000),
     });
