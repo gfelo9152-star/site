@@ -1,6 +1,7 @@
 // Vercel serverless — Webhook زر «حظر/فك حظر/قائمة IP» (Cleaning/Avavine)
 // يستقبل ضغطة زر التلغرام ويحظر/يفك/يعرض على حساب 9743497891 (Avavine)
 const { bumpStat, getTodayStats } = require('./stats');
+const { runCampaignReview } = require('./review');
 const TARGET_CIDS = ['9743497891'];
 const MCC_ID = '5565578031';
 const IPV4 = /^(\d{1,3}\.){3}\d{1,3}$/;
@@ -194,6 +195,49 @@ async function unblockIp(token, ip) {
   return { ok, fail, details };
 }
 
+async function listSearchTerms(token, customerId) {
+  const res = await gadsRaw(token, customerId, `customers/${customerId}/googleAds:searchStream`, {
+    query: `SELECT search_term_view.search_term, search_term_view.keyword_info.match_type,
+                   metrics.impressions, metrics.clicks, metrics.cost_micros
+            FROM search_term_view
+            WHERE segments.date DURING TODAY
+            ORDER BY metrics.impressions DESC`,
+  });
+  if (!res.ok) return { ok: false, detail: res.detail };
+  const batches = Array.isArray(res.data) ? res.data : [];
+  const terms = [];
+  for (const batch of batches) {
+    for (const row of batch.results || []) {
+      const st = row.searchTermView?.searchTerm;
+      if (!st) continue;
+      terms.push({
+        term: st,
+        match: row.searchTermView?.keywordInfo?.matchType || '?',
+        impressions: Number(row.metrics?.impressions || 0),
+        clicks: Number(row.metrics?.clicks || 0),
+        cost: Number(row.metrics?.costMicros || 0) / 1e6,
+      });
+    }
+  }
+  terms.sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks);
+  return { ok: true, terms };
+}
+
+async function addNegativeKeyword(token, customerId, campaignId, term) {
+  const res = await gadsRaw(token, customerId, `customers/${customerId}/campaignCriteria:mutate`, {
+    operations: [
+      {
+        create: {
+          campaign: `customers/${customerId}/campaigns/${campaignId}`,
+          negative: true,
+          keyword: { text: term, matchType: 'EXACT' },
+        },
+      },
+    ],
+  });
+  return { ok: res.ok, detail: res.detail };
+}
+
 export default async function handler(req, res) {
   const tokenT = process.env.TELEGRAM_BOT_TOKEN;
   const allowedChat = Number('7304090625');
@@ -216,6 +260,118 @@ export default async function handler(req, res) {
   const chatId = msg?.chat?.id;
   const messageId = msg?.message_id;
 
+  // ─── زر الرجوع ────────────────────────────────
+  if (data === 'back') {
+    await answerCallback(tokenT, cq.id, '');
+    const menu = {
+      inline_keyboard: [
+        [{ text: '📊 إحصائيات اليوم', callback_data: 'stats' }, { text: '📋 المحظورات', callback_data: 'list' }],
+        [{ text: '🔍 مراجعة أداء الحملة', callback_data: 'review' }],
+        [{ text: '🔎 كلمات الظهور اليوم', callback_data: 'terms' }],
+      ],
+    };
+    await editMessage(tokenT, chatId, messageId, `🧭 <b>القائمة</b>\nاختر إجراءً:`, menu);
+    return res.status(200).json({ ok: true });
+  }
+
+  // ─── زر العد الإجمالي (بلا حركة) ────────────────
+  if (data === 'noop') {
+    await answerCallback(tokenT, cq.id, '');
+    return res.status(200).json({ ok: true });
+  }
+
+  // ─── مراجعة أداء الحملة ──────────────────────────
+  if (data === 'review') {
+    await answerCallback(tokenT, cq.id, '⏳ جارٍ مراجعة أداء الحملة...');
+    const review = await runCampaignReview();
+    if (!review.ok) {
+      await editMessage(tokenT, chatId, messageId, `❌ <b>فشلت المراجعة</b>\n${review.error || 'خطأ غير معروف'}`);
+      return res.status(200).json({ ok: true, error: review.error });
+    }
+    const backBtn = { inline_keyboard: [[{ text: '📊 إحصائيات اليوم', callback_data: 'stats' }, { text: '📋 المحظورات', callback_data: 'list' }]] };
+    await editMessage(tokenT, chatId, messageId, review.text, backBtn);
+    return res.status(200).json({ ok: true });
+  }
+
+  // ─── كلمات الظهور اليوم ─────────────────────────
+  if (data === 'terms') {
+    await answerCallback(tokenT, cq.id, '⏳ جارٍ جلب كلمات الظهور...');
+    const token = await getGadsToken();
+    if (!token) {
+      await editMessage(tokenT, chatId, messageId, `❌ تعذر الحصول على توكن Google Ads`);
+      return res.status(200).json({ ok: true });
+    }
+    const res = await listSearchTerms(token, TARGET_CIDS[0]);
+    if (!res.ok) {
+      await editMessage(tokenT, chatId, messageId, `❌ فشل جلب كلمات الظهور: ${res.detail || ''}`);
+      return res.status(200).json({ ok: true });
+    }
+    const terms = res.terms.slice(0, 15);
+    if (terms.length === 0) {
+      const backBtn = { inline_keyboard: [[{ text: '🔙 رجوع', callback_data: 'back' }]] };
+      await editMessage(tokenT, chatId, messageId, `🔎 <b>لا كلمات ظهور لليوم</b>`, backBtn);
+      return res.status(200).json({ ok: true, count: 0 });
+    }
+    const todayAr = new Date().toLocaleDateString('ar-EG', { timeZone: 'Asia/Dubai', weekday: 'long', day: 'numeric', month: 'long' });
+    const matchName = (m) => m === 'EXACT' ? 'تامة' : m === 'PHRASE' ? 'عبارة' : m === 'BROAD' ? 'واسعة' : '?';
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const lines = [`🔎 <b>كلمات الظهور اليوم — تنظيف</b>`, `🗓 ${todayAr}`, ''];
+    const keyboard = [];
+    terms.forEach((t, i) => {
+      lines.push(
+        `${i + 1}. <b>${esc(t.term)}</b>\n` +
+        `   👀 ${t.impressions} 🙌 ${t.clicks} 💰 ${t.cost.toFixed(1)}درهم · ${matchName(t.match)}`
+      );
+      keyboard.push([{ text: `🚫 حظر #${i + 1} — ${t.term.slice(0, 30)}`, callback_data: `negterm:${i}` }]);
+    });
+    keyboard.push([{ text: '🔙 رجوع', callback_data: 'back' }]);
+    await editMessage(tokenT, chatId, messageId, lines.join('\n'), { inline_keyboard: keyboard });
+    return res.status(200).json({ ok: true, count: terms.length });
+  }
+
+  // ─── حظر كلمة سلبية ────────────────────────────
+  if (data.startsWith('negterm:')) {
+    const idx = Number(data.slice(8).trim());
+    await answerCallback(tokenT, cq.id, '⏳ جارٍ حظر الكلمة...');
+    const token = await getGadsToken();
+    if (!token) {
+      await editMessage(tokenT, chatId, messageId, `❌ تعذر الحصول على توكن Google Ads`);
+      return res.status(200).json({ ok: true });
+    }
+    const res = await listSearchTerms(token, TARGET_CIDS[0]);
+    if (!res.ok || !res.terms[idx]) {
+      await editMessage(tokenT, chatId, messageId, `❌ انتهت صلاحية القائمة — اضغط «🔎 كلمات الظهور» من جديد`);
+      return res.status(200).json({ ok: true });
+    }
+    const term = res.terms[idx].term;
+    const customerId = TARGET_CIDS[0];
+    const campaigns = await getEnabledCampaigns(token, customerId);
+    let okCount = 0, failCount = 0;
+    const details = [];
+    if (campaigns.length === 0) {
+      await editMessage(tokenT, chatId, messageId, `⚠️ لا حملات نشطة لإضافة الكلمة السلبية`);
+      return res.status(200).json({ ok: true });
+    }
+    for (const campaignId of campaigns) {
+      const r = await addNegativeKeyword(token, customerId, campaignId, term);
+      if (r.ok) okCount++;
+      else { failCount++; details.push(`<b>${customerId}</b>/${campaignId}: ${(r.detail || 'error').slice(0, 80)}`); }
+    }
+    const summary =
+      `🚫 <b>تمت إضافة كلمة سلبية (تامة)</b>\n` +
+      `🔑 <b>${esc(term)}</b>\n` +
+      `✅ ${okCount} حملة\n` +
+      (failCount ? `❌ ${failCount} فشل\n${details.slice(0, 5).join('\n')}` : '');
+    const replyMarkup = {
+      inline_keyboard: [
+        [{ text: '🔎 كلمات الظهور اليوم', callback_data: 'terms' }],
+        [{ text: '🔙 رجوع', callback_data: 'back' }],
+      ],
+    };
+    await editMessage(tokenT, chatId, messageId, summary, replyMarkup);
+    return res.status(200).json({ ok: true, term, okCount, failCount });
+  }
+
   // ─── Today's stats ─────────────────────────────
   if (data === 'stats') {
     await answerCallback(tokenT, cq.id, '⏳ جارٍ جلب الإحصائيات...');
@@ -234,8 +390,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, stats: s });
   }
 
-  // ─── List ───────────────────────────────────────
-  if (data === 'list') {
+  // ─── List (5 نتائج لكل صفحة + تنقّل) ──────────────
+  if (data === 'list' || data.startsWith('listp:')) {
+    const page = data === 'list' ? 0 : Math.max(0, parseInt(data.split(':')[1], 10) || 0);
     await answerCallback(tokenT, cq.id, '⏳ جارٍ جلب القائمة...');
     const token = await getGadsToken();
     if (!token) {
@@ -243,27 +400,29 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
     const items = await listBlockedIps(token);
-    if (items.length === 0) {
-      await editMessage(tokenT, chatId, messageId, `📋 <b>لا توجد IPs محظورة</b> في الحسابات المستهدفة.`);
+    const total = items.length;
+    if (total === 0) {
+      const emptyBtn = { inline_keyboard: [[{ text: '🔙 رجوع', callback_data: 'back' }]] };
+      await editMessage(tokenT, chatId, messageId, `📋 <b>لا توجد IPs محظورة</b> في الحسابات المستهدفة.`, emptyBtn);
       return res.status(200).json({ ok: true, count: 0 });
     }
-    const lines = items.map((x) => `• <code>${x.ip}</code> — ${x.count} حملة`);
-    const chunks = [];
-    let chunk = `📋 <b>المحظورات (${items.length})</b>\n`;
-    for (const line of lines) {
-      if ((chunk + line).length > 3800) {
-        chunks.push(chunk);
-        chunk = line + '\n';
-      } else {
-        chunk += line + '\n';
-      }
-    }
-    chunks.push(chunk);
-    await editMessage(tokenT, chatId, messageId, chunks[0]);
-    for (let i = 1; i < chunks.length; i++) {
-      await tgApi(tokenT, 'sendMessage', { chat_id: chatId, text: chunks[i], parse_mode: 'HTML' });
-    }
-    return res.status(200).json({ ok: true, count: items.length });
+    const PER = 5;
+    const pages = Math.ceil(total / PER);
+    const cur = Math.min(page, pages - 1);
+    const start = cur * PER;
+    const slice = items.slice(start, start + PER);
+    const lines = slice.map((x) => `• <code>${x.ip}</code> — ${x.count} حملة`).join('\n');
+    const end = Math.min(start + PER, total);
+    const text = `📋 <b>المحظورات</b>\nالنتائج ${start + 1}–${end} من <b>${total}</b>\n\n${lines}`;
+    const keyboard = [];
+    const nav = [];
+    if (cur > 0) nav.push({ text: '⬅️ السابق', callback_data: `listp:${cur - 1}` });
+    if (cur < pages - 1) nav.push({ text: 'التالي ➡️', callback_data: `listp:${cur + 1}` });
+    if (nav.length) keyboard.push(nav);
+    keyboard.push([{ text: `🔢 الإجمالي: ${total}`, callback_data: 'noop' }]);
+    keyboard.push([{ text: '🔙 رجوع', callback_data: 'back' }]);
+    await editMessage(tokenT, chatId, messageId, text, { inline_keyboard: keyboard });
+    return res.status(200).json({ ok: true, count: total, page: cur, pages });
   }
 
   // ─── Unblock ────────────────────────────────────
@@ -380,6 +539,6 @@ export default async function handler(req, res) {
     ],
   };
   await editMessage(tokenT, chatId, messageId, summary, replyMarkup);
-  if (okCount > 0) bumpStat('blocked').catch(() => {});
+  if (okCount > 0) { try { await bumpStat('blocked'); } catch (e) {} }
   return res.status(200).json({ ok: true, blocked: ip, okCount, failCount, details });
 }
