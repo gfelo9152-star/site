@@ -4,6 +4,7 @@ const { bumpStat, getTodayStats } = require('./stats');
 const { runCampaignReview } = require('./review');
 const TARGET_CIDS = ['9743497891'];
 const MCC_ID = '5565578031';
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const IPV4 = /^(\d{1,3}\.){3}\d{1,3}$/;
 
 async function tgApi(token, method, payload) {
@@ -197,7 +198,7 @@ async function unblockIp(token, ip) {
 
 async function listSearchTerms(token, customerId) {
   const res = await gadsRaw(token, customerId, `customers/${customerId}/googleAds:searchStream`, {
-    query: `SELECT search_term_view.search_term, search_term_view.keyword_info.match_type,
+    query: `SELECT search_term_view.search_term, segments.keyword.info.match_type,
                    metrics.impressions, metrics.clicks, metrics.cost_micros
             FROM search_term_view
             WHERE segments.date DURING TODAY
@@ -212,7 +213,7 @@ async function listSearchTerms(token, customerId) {
       if (!st) continue;
       terms.push({
         term: st,
-        match: row.searchTermView?.keywordInfo?.matchType || '?',
+        match: row.segments?.keyword?.info?.matchType || '?',
         impressions: Number(row.metrics?.impressions || 0),
         clicks: Number(row.metrics?.clicks || 0),
         cost: Number(row.metrics?.costMicros || 0) / 1e6,
@@ -221,6 +222,28 @@ async function listSearchTerms(token, customerId) {
   }
   terms.sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks);
   return { ok: true, terms };
+}
+
+// ─── نصوص الكلمات السلبية (المحظورة) النشطة ───────
+async function getBlockedTerms(token, customerId) {
+  const res = await gadsRaw(token, customerId, `customers/${customerId}/googleAds:searchStream`, {
+    query: `SELECT campaign_criterion.keyword.text
+            FROM campaign_criterion
+            WHERE campaign.status != 'REMOVED'
+              AND campaign_criterion.type = 'KEYWORD'
+              AND campaign_criterion.negative = true
+              AND campaign_criterion.status = 'ENABLED'`,
+  });
+  if (!res.ok) return [];
+  const blocked = [];
+  const batches = Array.isArray(res.data) ? res.data : [];
+  for (const batch of batches) {
+    for (const row of batch.results || []) {
+      const txt = row.campaignCriterion?.keyword?.text;
+      if (txt) blocked.push(txt.toLowerCase());
+    }
+  }
+  return blocked;
 }
 
 async function addNegativeKeyword(token, customerId, campaignId, term) {
@@ -236,6 +259,39 @@ async function addNegativeKeyword(token, customerId, campaignId, term) {
     ],
   });
   return { ok: res.ok, detail: res.detail };
+}
+
+// ─── فك حظر كلمة سلبية: يجد الـresource_name المطابقة (EXACT سلبية نشطة) ويزيلها ─────
+async function removeNegativeKeyword(token, customerId, term) {
+  const res = await gadsRaw(token, customerId, `customers/${customerId}/googleAds:searchStream`, {
+    query: `SELECT campaign_criterion.resource_name, campaign.id
+            FROM campaign_criterion
+            WHERE campaign.status != 'REMOVED'
+              AND campaign_criterion.type = 'KEYWORD'
+              AND campaign_criterion.negative = true
+              AND campaign_criterion.status = 'ENABLED'
+              AND campaign_criterion.keyword.text = '${term.replace(/'/g, "\\'")}'
+              AND campaign_criterion.keyword.match_type = 'EXACT'`,
+  });
+  if (!res.ok) return { ok: false, detail: res.detail };
+  const batches = Array.isArray(res.data) ? res.data : [];
+  const resources = [];
+  for (const batch of batches) {
+    for (const row of batch.results || []) {
+      const rn = row.campaignCriterion?.resourceName;
+      if (rn) resources.push(rn);
+    }
+  }
+  if (resources.length === 0) return { ok: true, removed: 0 };
+  let removed = 0, fail = 0;
+  for (let i = 0; i < resources.length; i += 10) {
+    const chunk = resources.slice(i, i + 10);
+    const ops = chunk.map((rn) => ({ remove: rn }));
+    const r = await gadsRaw(token, customerId, `customers/${customerId}/campaignCriteria:mutate`, { operations: ops });
+    if (r.ok) removed += chunk.length;
+    else fail += chunk.length;
+  }
+  return { ok: fail === 0, removed, fail };
 }
 
 export default async function handler(req, res) {
@@ -294,39 +350,53 @@ export default async function handler(req, res) {
   }
 
   // ─── كلمات الظهور اليوم ─────────────────────────
-  if (data === 'terms') {
+  if (data === 'terms' || data.startsWith('terms:')) {
+    const page = data.startsWith('terms:') ? Math.max(0, Number(data.slice(6) || '0')) : 0;
     await answerCallback(tokenT, cq.id, '⏳ جارٍ جلب كلمات الظهور...');
     const token = await getGadsToken();
     if (!token) {
       await editMessage(tokenT, chatId, messageId, `❌ تعذر الحصول على توكن Google Ads`);
       return res.status(200).json({ ok: true });
     }
-    const res = await listSearchTerms(token, TARGET_CIDS[0]);
-    if (!res.ok) {
-      await editMessage(tokenT, chatId, messageId, `❌ فشل جلب كلمات الظهور: ${res.detail || ''}`);
+    const termsRes = await listSearchTerms(token, TARGET_CIDS[0]);
+    if (!termsRes.ok) {
+      await editMessage(tokenT, chatId, messageId, `❌ فشل جلب كلمات الظهور: ${termsRes.detail || ''}`);
       return res.status(200).json({ ok: true });
     }
-    const terms = res.terms.slice(0, 15);
-    if (terms.length === 0) {
-      const backBtn = { inline_keyboard: [[{ text: '🔙 رجوع', callback_data: 'back' }]] };
-      await editMessage(tokenT, chatId, messageId, `🔎 <b>لا كلمات ظهور لليوم</b>`, backBtn);
-      return res.status(200).json({ ok: true, count: 0 });
-    }
-    const todayAr = new Date().toLocaleDateString('ar-EG', { timeZone: 'Asia/Dubai', weekday: 'long', day: 'numeric', month: 'long' });
-    const matchName = (m) => m === 'EXACT' ? 'تامة' : m === 'PHRASE' ? 'عبارة' : m === 'BROAD' ? 'واسعة' : '?';
-    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const lines = [`🔎 <b>كلمات الظهور اليوم — تنظيف</b>`, `🗓 ${todayAr}`, ''];
-    const keyboard = [];
-    terms.forEach((t, i) => {
-      lines.push(
-        `${i + 1}. <b>${esc(t.term)}</b>\n` +
-        `   👀 ${t.impressions} 🙌 ${t.clicks} 💰 ${t.cost.toFixed(1)}درهم · ${matchName(t.match)}`
-      );
-      keyboard.push([{ text: `🚫 حظر #${i + 1} — ${t.term.slice(0, 30)}`, callback_data: `negterm:${i}` }]);
-    });
-    keyboard.push([{ text: '🔙 رجوع', callback_data: 'back' }]);
-    await editMessage(tokenT, chatId, messageId, lines.join('\n'), { inline_keyboard: keyboard });
-    return res.status(200).json({ ok: true, count: terms.length });
+    const allTerms = termsRes.terms;
+        if (allTerms.length === 0) {
+          const backBtn = { inline_keyboard: [[{ text: '🔙 رجوع', callback_data: 'back' }]] };
+          await editMessage(tokenT, chatId, messageId, `🔎 <b>لا كلمات ظهور لليوم</b>`, backBtn);
+          return res.status(200).json({ ok: true, count: 0 });
+        }
+        const PAGE_SIZE = 15;
+        const totalPages = Math.ceil(allTerms.length / PAGE_SIZE);
+        const p = Math.min(page, totalPages - 1);
+        const terms = allTerms.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE);
+        const blocked = await getBlockedTerms(token, TARGET_CIDS[0]);
+        const todayAr = new Date().toLocaleDateString('ar-EG', { timeZone: 'Asia/Dubai', weekday: 'long', day: 'numeric', month: 'long' });
+        const matchName = (m) => m === 'EXACT' ? 'تامة' : m === 'PHRASE' ? 'عبارة' : m === 'BROAD' ? 'واسعة' : '?';
+        const lines = [`🔎 <b>كلمات الظهور اليوم — تنظيف</b>`, `🗓 ${todayAr}`, ''];
+        const keyboard = [];
+        terms.forEach((t, i) => {
+          const actualIdx = p * PAGE_SIZE + i;
+          const isBlocked = blocked.includes(t.term.toLowerCase());
+          const flag = isBlocked ? ' ✅' : '';
+          lines.push(
+            `— <b>${esc(t.term)}</b>${flag}\n` +
+            `   👀 ${t.impressions} 🙌 ${t.clicks} 💰 ${t.cost.toFixed(1)}درهم · ${matchName(t.match)}`
+          );
+          keyboard.push(isBlocked
+                    ? { text: `↩️ فك حظر — ${t.term.slice(0, 30)}`, callback_data: `unblockterm:${actualIdx}` }
+                    : { text: `🚫 حظر — ${t.term.slice(0, 30)}`, callback_data: `negterm:${actualIdx}` });
+        });
+        const nav = [];
+        if (p > 0) nav.push({ text: '◀️ السابق', callback_data: `terms:${p - 1}` });
+        if (p < totalPages - 1) nav.push({ text: `التالي ▶️`, callback_data: `terms:${p + 1}` });
+        if (nav.length) keyboard.push(nav);
+        keyboard.push([{ text: '🔙 رجوع', callback_data: 'back' }]);
+        await editMessage(tokenT, chatId, messageId, lines.join('\n'), { inline_keyboard: keyboard });
+        return res.status(200).json({ ok: true, count: terms.length });
   }
 
   // ─── حظر كلمة سلبية ────────────────────────────
@@ -338,12 +408,14 @@ export default async function handler(req, res) {
       await editMessage(tokenT, chatId, messageId, `❌ تعذر الحصول على توكن Google Ads`);
       return res.status(200).json({ ok: true });
     }
-    const res = await listSearchTerms(token, TARGET_CIDS[0]);
-    if (!res.ok || !res.terms[idx]) {
+    // أعد جلب القائمة (نفس الترتيب) لربط الفهرس بالكلمة — لا اعتماد على حالة الطلب السابق
+    // ملاحظة: لا تُسمِّ الناتج `res` — يظلل كائن استجابة Express → TypeError res.status
+    const termsRes = await listSearchTerms(token, TARGET_CIDS[0]);
+    if (!termsRes.ok || !termsRes.terms[idx]) {
       await editMessage(tokenT, chatId, messageId, `❌ انتهت صلاحية القائمة — اضغط «🔎 كلمات الظهور» من جديد`);
       return res.status(200).json({ ok: true });
     }
-    const term = res.terms[idx].term;
+    const term = termsRes.terms[idx].term;
     const customerId = TARGET_CIDS[0];
     const campaigns = await getEnabledCampaigns(token, customerId);
     let okCount = 0, failCount = 0;
@@ -370,6 +442,39 @@ export default async function handler(req, res) {
     };
     await editMessage(tokenT, chatId, messageId, summary, replyMarkup);
     return res.status(200).json({ ok: true, term, okCount, failCount });
+  }
+
+  // ─── فك حظر كلمة سلبية من الرقم المختار ──────────
+  if (data.startsWith('unblockterm:')) {
+    const idx = Number(data.slice(12).trim());
+    await answerCallback(tokenT, cq.id, `⏳ جارٍ فك حظر الكلمة...`);
+    const token = await getGadsToken();
+    if (!token) {
+      await editMessage(tokenT, chatId, messageId, `❌ تعذر الحصول على توكن Google Ads`);
+      return res.status(200).json({ ok: true });
+    }
+    const termsRes = await listSearchTerms(token, TARGET_CIDS[0]);
+    if (!termsRes.ok || !termsRes.terms[idx]) {
+      await editMessage(tokenT, chatId, messageId, `❌ انتهت صلاحية القائمة — اضغط «🔎 كلمات الظهور» من جديد`);
+      return res.status(200).json({ ok: true });
+    }
+    const term = termsRes.terms[idx].term;
+    const r = await removeNegativeKeyword(token, TARGET_CIDS[0], term);
+    const summary =
+      (r.ok && r.removed > 0
+        ? `↩️ <b>تم فك حظر الكلمة</b>\n`
+        : `ℹ️ <b>لا يوجد حظر مفعّل لهذه الكلمة</b>\n`) +
+      `🔑 <b>${esc(term)}</b>\n` +
+      (r.removed ? `✅ أُزيل من ${r.removed} حملة\n` : '') +
+      (r.fail ? `❌ ${r.fail} فشل\n` : '');
+    const replyMarkup = {
+      inline_keyboard: [
+        [{ text: '🔎 كلمات الظهور اليوم', callback_data: 'terms' }],
+        [{ text: '🔙 رجوع', callback_data: 'back' }],
+      ],
+    };
+    await editMessage(tokenT, chatId, messageId, summary, replyMarkup);
+    return res.status(200).json({ ok: true, term, removed: r.removed, fail: r.fail });
   }
 
   // ─── Today's stats ─────────────────────────────
