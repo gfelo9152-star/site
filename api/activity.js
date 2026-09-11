@@ -108,6 +108,8 @@ export default async function handler(req, res) {
   ]);
   buttons.push([{ text: '📋 المحظورات', callback_data: 'list' }]);
   buttons.push([{ text: '📊 إحصائيات اليوم', callback_data: 'stats' }]);
+  buttons.push([{ text: '🔍 مراجعة أداء الحملة', callback_data: 'review' }]);
+  buttons.push([{ text: '🔎 كلمات الظهور اليوم', callback_data: 'terms' }]);
   const replyMarkup = { inline_keyboard: buttons };
 
   try {
@@ -127,14 +129,15 @@ export default async function handler(req, res) {
       return res.status(502).json({ ok: false, error: 'telegram', detail: tj.description });
     }
 
-    // Daily counters (fire-and-forget)
-    bumpStat(type === 'call' ? 'calls' : type === 'whatsapp' ? 'whatsapp' : 'views').catch(() => {});
+    // Daily counters — MUST be awaited: fire-and-forget gets killed when the
+    // serverless function exits before the blob PUT completes (counters stayed 0).
+    try { await bumpStat(type === 'call' ? 'calls' : type === 'whatsapp' ? 'whatsapp' : 'views'); } catch (e) {}
 
     // Auto-block على الزيارات المتكررة فقط (نفس الـ IP 3+ مرات باليوم)
     if (type === 'view' && ipv4) {
       const visits = await bumpIpVisit(ip).catch(() => 0);
-      if (visits === AUTO_BLOCK_THRESHOLD) {
-        autoBlock(ip).catch(() => {});
+      if (visits >= AUTO_BLOCK_THRESHOLD) {
+        await autoBlock(ip).catch(() => {});
       }
     }
 
@@ -202,7 +205,7 @@ async function autoBlock(ip) {
         if (block && block.ok) okCount++;
       }
     }
-    if (okCount > 0) bumpStat('blocked').catch(() => {});
+    if (okCount > 0) { try { await bumpStat('blocked'); } catch (e) {} }
     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
       const text =
         `🤖 <b>حظر تلقائي (تكرار زيارة)</b>\n` +
